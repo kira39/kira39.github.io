@@ -14,6 +14,8 @@ mongoose.connect(process.env.MONGO_URL);
 const Users = require('./models/users.js');
 const Tasks = require('./models/tasks.js');
 
+// var port = process.env.PORT || 4000;
+
 // Configure our app
 const store = new MongoDBStore({
   uri: process.env.MONGO_URL,
