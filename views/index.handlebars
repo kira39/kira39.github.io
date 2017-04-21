@@ -7,8 +7,56 @@
 </head>
 <body>
 
+<h1>Social todo app for cpsc213</h1>
 
-    <h1>Social todo app for cpsc213</h1>
+{{#if errors}}
+<div style="color:red" class="errors">
+    {{errors}}
+</div>
+{{/if}}
+
+{{#if currentUser}}
+  <b><h2 class="welcome">Welcome {{currentUser.name}}!</h2></b>
+  <div>
+    <h4>Your Tasks</h4>
+    {{#if tasks}}
+        <ul>
+        {{#each tasks}}
+          <li>{{this.name}}</li>
+        {{/each}}
+        </ul>
+    {{else}}
+      No tasks to show!
+    {{/if}}
+  </div>
+  <hr>
+  <div>
+      <h4>Add a new task</h4>
+      <form class="createTask" action="/task/create" method="POST">
+          <label for="name">Task name</label>
+          <input name="name" type="text"><br>
+          <label for="description">Task Description</label>
+          <input name="description" type="text"><br>
+          Collaborators<br>
+          <input name="collaborator1" type="email"><br>
+          <input name="collaborator2" type="email"><br>
+          <input name="collaborator3" type="email"><br>
+          <input type="submit" class="create-task-submit">
+      </form>
+  </div>
+
+
+
+  <footer>
+  <a href="/user/logout" class="logout">Logout</a>
+  </footer>
+  </body>
+  </html>
+
+
+{{else}}
+    <!-- No tasks to show! -->
+
 
 
 <div>
@@ -16,7 +64,7 @@
         <label for="email">Email</label>
         <input name="email" id="email" type="text"><br>
         <label for="password">Password</label>
-        <input name="password"  id="password" type="text"><br>
+        <input name="password"  id="password" type="password"><br>
         <input type="submit"  class="log-in-submit">
     </form>
 </div>
@@ -25,10 +73,10 @@
 
 <div>
     <form class="register" action="/user/register" method="POST" class="signup-form" style="display: block;">
-      <input name="name" type="text" class="text-input" placeholder="first &amp; last name" required="">
-      <input name="email" type="email" class="text-input" placeholder="email" required="">
-      <input name="password" type="password" class="text-input" placeholder="password" required="">
-      <input name="passwordConfirmation" type="password" class="text-input" placeholder="password confirmation" required="">
+      <input name="name" type="text" class="text-input" placeholder="first &amp; last name">
+      <input name="email" type="email" class="text-input" placeholder="email">
+      <input name="password" type="password" class="text-input" placeholder="password">
+      <input name="passwordConfirmation" type="password" class="text-input" placeholder="password confirmation">
       <input class="sign-up-submit" type="submit">
     </form>
 </div>
@@ -39,3 +87,4 @@
 </footer>
 </body>
 </html>
+{{/if}}
