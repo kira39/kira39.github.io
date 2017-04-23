@@ -20,9 +20,17 @@
   <div>
     <h4>Your Tasks</h4>
     {{#if tasks}}
-        <ul>
+        <ul class="tasks">
         {{#each tasks}}
-          <li>{{this.name}}</li>
+          <li class="task">{{this.name}}</li>
+          <form method="post" action="/tasks/{{this._id}}/delete">
+            <input type="submit" name="delete" class="delete" value="delete">
+          </form>
+          <form method="post" action="/tasks/{{this._id}}/complete">
+          <input type="submit" name="toggle" class="toggle" value="Mark complete">
+          </form>
+            noncomplete
+            woooooot
         {{/each}}
         </ul>
     {{else}}
@@ -37,10 +45,14 @@
           <input name="name" type="text"><br>
           <label for="description">Task Description</label>
           <input name="description" type="text"><br>
+          <!-- <label for="collaborator1">Collaborators</label> -->
           Collaborators<br>
           <input name="collaborator1" type="email"><br>
           <input name="collaborator2" type="email"><br>
           <input name="collaborator3" type="email"><br>
+          <!-- <input name="collaborator1" id="email" type="text"><br>
+          <input name="collaborator2" id="email" type="text"><br>
+          <input name="collaborator3" id="email" type="text"><br> -->
           <input type="submit" class="create-task-submit">
       </form>
   </div>

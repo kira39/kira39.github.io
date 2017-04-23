@@ -43,7 +43,7 @@ app.use(session({
 // Middleware that looks up the current user for this sesssion, if there
 // is one.
 app.use((req, res, next) => {
-  console.log('req.session =', req.session);
+  // console.log('req.session =', req.session);
   if (req.session.userId) {
     Users.findById(req.session.userId, (err, user) => {
       if (!err) {
@@ -118,16 +118,20 @@ app.post('/user/register', loadUserTasks, (req, res) => {
     })
 });
 
-app.get('/user/home', loadUserTasks, (req, res) => {
-  res.render('home');
+// app.get('/user/home', loadUserTasks, (req, res) => {
+//   res.render('home');
+// });
+
+app.get('/', loadUserTasks, (req, res) => {
+  res.render('index');
 });
 
 app.post('/user/login', (req, res) => {
   var user = Users.findOne({email: req.body.email}, function(err, user){
     if(err || !user){
-      res.send('bad login, no such user');
+      err = 'No user exists!';
+      res.render('index', {errors: err});
       return;
-      // res.render('index', {errors: err});
     }
     console.log('user', user);
     console.log('actual password =', user.hashed_password);
@@ -157,11 +161,18 @@ app.use(isLoggedIn);
 
 // Handle submission of new task form
 app.post('/tasks/:id/:action(complete|incomplete)', (req, res) => {
-  res.send('woot');
+  res.redirect('/');
 });
 
 app.post('/tasks/:id/delete', (req, res) => {
-  res.send('woot');
+  Tasks.remove({_id: req.params.id}, function(err){
+    if(err){
+      err = 'Could not delete task!';
+      return res.render('index', {errors: err});
+    }else{
+      res.redirect('/');
+    }
+  });
 });
 
 // Handle submission of new task form
@@ -172,6 +183,7 @@ app.post('/task/create', (req, res) => {
   newTask.name = req.body.name;
   newTask.description = req.body.description;
   newTask.collaborators = [req.body.collaborator1, req.body.collaborator2, req.body.collaborator3];
+  newTask.isComplete = false;
   newTask.save(function(err, savedTask) {
     if(err || !savedTask) {
       err = 'Error saving task!';
