@@ -14,8 +14,6 @@ mongoose.connect(process.env.MONGO_URL);
 const Users = require('./models/users.js');
 const Tasks = require('./models/tasks.js');
 
-// var port = process.env.PORT || 4000;
-
 // Configure our app
 const store = new MongoDBStore({
   uri: process.env.MONGO_URL,
@@ -24,6 +22,7 @@ const store = new MongoDBStore({
 app.engine('handlebars', exphbs({
   defaultLayout: 'main',
 }));
+app.use(express.static('css'));
 app.set('view engine', 'handlebars');
 app.use(bodyParser.urlencoded({
   extended: true,
@@ -43,7 +42,6 @@ app.use(session({
 // Middleware that looks up the current user for this sesssion, if there
 // is one.
 app.use((req, res, next) => {
-  // console.log('req.session =', req.session);
   if (req.session.userId) {
     Users.findById(req.session.userId, (err, user) => {
       if (!err) {
@@ -57,7 +55,7 @@ app.use((req, res, next) => {
 });
 
 // Middleware that checks if a user is logged in. If so, the
-// request continues to be processed, otherwise a 403 is returned.
+// Request continues to be processed, otherwise a 403 is returned.
 function isLoggedIn(req, res, next) {
   if (res.locals.currentUser) {
     next();
@@ -67,6 +65,7 @@ function isLoggedIn(req, res, next) {
 }
 
 // Middleware that loads a users tasks if they are logged in.
+// Assigns task to owner and collaborator
 function loadUserTasks(req, res, next) {
   if(!res.locals.currentUser){
     return next();
@@ -75,25 +74,23 @@ function loadUserTasks(req, res, next) {
     {owner: res.locals.currentUser},
     {collaborators: res.locals.currentUser.email}])
     .exec(function(err, tasks){
-    if(!err){
-      res.locals.tasks = tasks;
-    }
+    if(err){
+      err = 'Cannot find task!';
+      res.render('index', {errors: err});
+    } else {
+        for(var i = 0; i < tasks.length; i++) {
+            if (tasks[i].owner.toString() == res.locals.currentUser._id.toString()){
+              tasks[i].isMyTask = true;
+            }
+          }
+        res.locals.tasks = tasks;
+      }
     next();
-  })
+  });
 }
 
 // Return the home page after loading tasks for users, or not.
 app.get('/', loadUserTasks, (req, res) => {
-  // Users.count(function (err, users) {
-  //   if (err) {
-  //     res.send('error getting users');
-  //   } else {
-  //     return res.render('index', {
-  //           // userCount: users.length
-  //           user: res.locals.currentUser
-  //         });
-  //   }
-  // });
   res.render('index');
 });
 
@@ -106,7 +103,6 @@ app.post('/user/register', loadUserTasks, (req, res) => {
     newUser.hashed_password = req.body.password;
     newUser.email = req.body.email;
     newUser.name = req.body.name;
-    // newUser.comparePassword(req.body.password)
     newUser.save(function(err) {
       if(err){
         err = 'Error registering you!';
@@ -118,14 +114,7 @@ app.post('/user/register', loadUserTasks, (req, res) => {
     })
 });
 
-// app.get('/user/home', loadUserTasks, (req, res) => {
-//   res.render('home');
-// });
-
-app.get('/', loadUserTasks, (req, res) => {
-  res.render('index');
-});
-
+// Log a user in, check if user already exists and make sure passwords match
 app.post('/user/login', (req, res) => {
   var user = Users.findOne({email: req.body.email}, function(err, user){
     if(err || !user){
@@ -133,9 +122,6 @@ app.post('/user/login', (req, res) => {
       res.render('index', {errors: err});
       return;
     }
-    console.log('user', user);
-    console.log('actual password =', user.hashed_password);
-    console.log('provided password =', req.body.password);
 
     user.comparePassword(req.body.password, function(err, isMatch) {
       if(err || !isMatch){
@@ -160,10 +146,37 @@ app.get('/user/logout', (req, res) => {
 app.use(isLoggedIn);
 
 // Handle submission of new task form
-app.post('/tasks/:id/:action(complete|incomplete)', (req, res) => {
-  res.redirect('/');
+// Check to see if task is complete or incomplete and change status
+app.post('/tasks/:id/complete', (req, res) => {
+  Tasks.findById(req.params.id, function(err, task) {
+    if(err || !task){
+      err = 'Could not find task!';
+      res.render('index', {errors: err});
+    } else if (!task.isComplete){
+          Tasks.update({_id: req.params.id}, {isComplete: true}, function(err){
+            if(err){
+              err = 'Cannot complete task';
+              res.render('index', {errors: err});
+            } else {
+              res.redirect('/');
+            }
+          });
+    } else {
+      if(task.isComplete == true){
+        Tasks.update({_id: req.params.id}, {isComplete: false}, function(err){
+          if(err || !task){
+            err = 'Could not find task2!';
+            res.render('index', {errors: err});
+          } else {
+            res.redirect('/');
+          }
+        });
+      }
+    }
+  });
 });
 
+// Findi task id and delete task
 app.post('/tasks/:id/delete', (req, res) => {
   Tasks.remove({_id: req.params.id}, function(err){
     if(err){
@@ -183,10 +196,22 @@ app.post('/task/create', (req, res) => {
   newTask.name = req.body.name;
   newTask.description = req.body.description;
   newTask.collaborators = [req.body.collaborator1, req.body.collaborator2, req.body.collaborator3];
+  // Sourced from TA office hours
+  const goodEmails = newTask
+    .collaborators
+    .map(c => !c || c.length === 0 || validator.isEmail(c))
+    .every(x => x);
+  if (!goodEmails) {
+    return res.render('index', {
+      errors: ['Bad email'],
+    });
+  }
   newTask.isComplete = false;
-  newTask.save(function(err, savedTask) {
-    if(err || !savedTask) {
+  console.log(newTask.isComplete);
+  return newTask.save(function(err, savedTask) {
+    if(err || !savedTask ) {
       err = 'Error saving task!';
+      console.log(err);
       res.render('index', {errors: err});
     } else {
         res.redirect('/');

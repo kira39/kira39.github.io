@@ -1,0 +1,12 @@
+body {
+	font-family: 'GT Walsheim', sans-serif;
+  padding: 30px 40px;
+}
+
+.task {
+	color: red;
+}
+
+.task.completed {
+	color: green;
+}

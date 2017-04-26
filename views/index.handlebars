@@ -2,12 +2,22 @@
 <!DOCTYPE html>
 <html>
 <head>
+
     <meta charset="utf-8">
     <title>CPSC213 Todo</title>
+
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="../styles.css"/>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.0/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
 </head>
 <body>
 
-<h1>Social todo app for cpsc213</h1>
+<div class="jumbotron">
+  <h1>Social todo app for cpsc213</h1>
+</div>
 
 {{#if errors}}
 <div style="color:red" class="errors">
@@ -22,20 +32,35 @@
     {{#if tasks}}
         <ul class="tasks">
         {{#each tasks}}
-          <li class="task">{{this.name}}</li>
-          <form method="post" action="/tasks/{{this._id}}/delete">
-            <input type="submit" name="delete" class="delete" value="delete">
-          </form>
-          <form method="post" action="/tasks/{{this._id}}/complete">
-          <input type="submit" name="toggle" class="toggle" value="Mark complete">
-          </form>
-            noncomplete
-            woooooot
+          {{#if this.isComplete}}
+            <li class="task completed">{{this.name}}
+            <form method="post" action="/tasks/{{this._id}}/complete">
+            <input type="submit" name="toggle" class="toggle" value="Mark incomplete">
+            </form>
+            {{#if this.isMyTask}}
+            <form method="post" action="/tasks/{{this._id}}/delete">
+              <input type="submit" name="delete" class="delete" value="delete">
+            </form>
+            {{/if}}
+            </li>
+          {{else}}
+            <li class="task">{{this.name}}
+            <form method="post" action="/tasks/{{this._id}}/complete">
+            <input type="submit" name="toggle" class="toggle" value="Mark complete">
+            </form>
+
+            {{#if this.isMyTask}}
+              <form method="post" action="/tasks/{{this._id}}/delete">
+                <input type="submit" name="delete" class="delete" value="delete">
+              </form>
+            {{/if}}
+            </li>
+          {{/if}}
         {{/each}}
         </ul>
     {{else}}
       No tasks to show!
-    {{/if}}
+  {{/if}}
   </div>
   <hr>
   <div>
@@ -45,14 +70,10 @@
           <input name="name" type="text"><br>
           <label for="description">Task Description</label>
           <input name="description" type="text"><br>
-          <!-- <label for="collaborator1">Collaborators</label> -->
           Collaborators<br>
           <input name="collaborator1" type="email"><br>
           <input name="collaborator2" type="email"><br>
           <input name="collaborator3" type="email"><br>
-          <!-- <input name="collaborator1" id="email" type="text"><br>
-          <input name="collaborator2" id="email" type="text"><br>
-          <input name="collaborator3" id="email" type="text"><br> -->
           <input type="submit" class="create-task-submit">
       </form>
   </div>
